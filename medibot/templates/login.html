@@ -1,0 +1,973 @@
+// ...existing code...
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medibot - Patient Login & Registration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        :root {
+            --primary-color: #00d4ff;
+            --secondary-color: #0ea5e9;
+            --accent-color: #ff6b6b;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --bg-primary: #0a0e1a;
+            --bg-secondary: rgba(0, 0, 0, 0.3);
+            --bg-tertiary: rgba(255, 255, 255, 0.05);
+            --text-primary: #e2e8f0;
+            --text-secondary: #a0aec0;
+            --text-muted: #64748b;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #1a1f3a 50%, var(--bg-primary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-left {
+            text-align: center;
+        }
+
+        .logo-section {
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 1rem;
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+            }
+
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 40px rgba(0, 212, 255, 0.8);
+            }
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .features-list {
+            list-style: none;
+            text-align: left;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .features-list li i {
+            color: var(--primary-color);
+            font-size: 1.1rem;
+        }
+
+        .login-right {
+            background: rgba(255, 255, 255, 0.05);
+            -webkit-backdrop-filter: blur(20px);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 0.25rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.95rem;
+        }
+
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group label i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+            width: 16px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: var(--transition);
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            position: relative;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            background: var(--bg-primary);
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 0.875rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .back-link {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .login-left {
+                order: 2;
+            }
+
+            .login-right {
+                order: 1;
+                padding: 2rem;
+            }
+
+            .logo {
+                font-size: 2rem;
+            }
+
+            .features-list {
+                max-width: 100%;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .back-link {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 1rem;
+                justify-content: center;
+            }
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .checkbox-input {
+            margin: 0;
+        }
+
+        .checkbox-text {
+            margin-left: 0.5rem;
+        }
+
+        .terms-text {
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .terms-link {
+            color: var(--primary-color);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="back-link">
+        <i class="fas fa-arrow-left"></i>
+        Back to Home
+    </a>
+
+    <div class="login-container">
+        <div class="login-left">
+            <div class="logo-section">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span>Medibot</span>
+                </div>
+                <p class="tagline">Your AI-Powered Medical Assistant</p>
+            </div>
+
+            <ul class="features-list">
+                <li>
+                    <i class="fas fa-brain"></i>
+                    <span>AI-Powered Symptom Analysis</span>
+                </li>
+                <li>
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Secure & Private Healthcare</span>
+                </li>
+                <li>
+                    <i class="fas fa-clock"></i>
+                    <span>24/7 Medical Assistance</span>
+                </li>
+                <li>
+                    <i class="fas fa-user-md"></i>
+                    <span>Connect with Specialists</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line"></i>
+                    <span>Track Your Health Journey</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="login-right">
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="switchTab('login')">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login
+                </button>
+                <button class="tab-btn" onclick="switchTab('register')">
+                    <i class="fas fa-user-plus"></i>
+                    Register
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form active">
+                <h2 class="form-title">Welcome Back</h2>
+                <p class="form-subtitle">Sign in to access your medical portal</p>
+
+                <div id="loginAlert" class="alert"></div>
+
+                <div class="form-group">
+                    <label for="loginEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="loginEmail" class="form-input" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="rememberMe" class="checkbox-input">
+                        <span class="checkbox-text">Remember me</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="loginBtn">
+                    <span id="loginBtnText">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
+                    </span>
+                    <span id="loginSpinner" class="loading-spinner hidden"></span>
+                </button>
+
+                <div class="form-footer">
+                    <a href="#" onclick="showForgotPassword()">Forgot your password?</a>
+                </div>
+            </form>
+
+            <!-- Registration Form -->
+            <form id="registerForm" class="auth-form" novalidate>
+                <h2 class="form-title">Create Account</h2>
+                <p class="form-subtitle">Join Medibot for personalized healthcare</p>
+
+                <div id="registerAlert" class="alert"></div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First name</label>
+                        <input type="text" id="firstName" class="form-input" placeholder="First name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Last name</label>
+                        <input type="text" id="lastName" class="form-input" placeholder="Last name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail">
+                        <i class="fas fa-envelope"></i>
+                        Email Address
+                    </label>
+                    <input type="email" id="registerEmail" class="form-input" placeholder="Enter your email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword">
+                        <i class="fas fa-lock"></i>
+                        Password
+                    </label>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="Create a password"
+                        required minlength="6">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone (optional)</label>
+                        <input type="tel" id="phone" class="form-input" placeholder="Phone number">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" class="form-input" placeholder="Your age" min="1" max="120">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">
+                        <i class="fas fa-venus-mars"></i>
+                        Gender
+                    </label>
+                    <select id="gender" class="form-input" required>
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                        <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="termsAgree" required class="checkbox-input">
+                        <span class="terms-text">I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a></span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-primary" id="registerBtn">
+                    <span id="registerBtnText">
+                        <i class="fas fa-user-plus"></i>
+                        Create Account
+                    </span>
+                    <span id="registerSpinner" class="loading-spinner hidden"></span>
+                </button>
+
+                <div class="form-footer">
+                    Already have an account? <a href="#" onclick="switchTab('login')">Sign in here</a>
+                </div>
+            </form>
+
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <a href="{{ url_for('portal_page') }}" class="btn-secondary">
+                <i class="fas fa-eye"></i>
+                Continue as Guest
+            </a>
+        </div>
+    </div>
+
+    <script>
+        console.log('🚀 Medibot Login Page Loading...');
+
+        // Utility functions
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function showAlert(alertId, message, type = 'info') {
+            const alert = document.getElementById(alertId);
+            alert.textContent = message;
+            alert.className = `alert alert-${type}`;
+            alert.style.display = 'block';
+        }
+
+        function hideAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            if (!alert) return;
+            alert.style.display = 'none';
+            alert.className = 'alert';
+            alert.textContent = '';
+        }
+
+        function setLoading(buttonId, spinnerId, textId, loading) {
+            const button = document.getElementById(buttonId);
+            const spinner = document.getElementById(spinnerId);
+            const text = document.getElementById(textId);
+
+            if (loading) {
+                button.disabled = true;
+                spinner.classList.remove('hidden');
+                if (text) text.style.display = 'none';
+            } else {
+                button.disabled = false;
+                spinner.classList.add('hidden');
+                if (text) text.style.display = 'inline';
+            }
+        }
+
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            if (tabName === 'login') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+            }
+
+            // Update forms
+            document.querySelectorAll('.auth-form').forEach(form => {
+                form.classList.remove('active');
+            });
+
+            document.getElementById(tabName + 'Form').classList.add('active');
+
+            // Clear any existing alerts
+            hideAlert('loginAlert');
+            hideAlert('registerAlert');
+        }
+
+        function showForgotPassword() {
+            showAlert('loginAlert', 'Password reset functionality will be available soon. Please contact support for assistance.', 'info');
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            console.log('Login form submitted');
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            // Validation
+            if (!email || !password) {
+                showAlert('loginAlert', 'Please fill in all fields', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showAlert('loginAlert', 'Please enter a valid email address', 'error');
+                return;
+            }
+
+            // Show loading
+            setLoading('loginBtn', 'loginSpinner', 'loginBtnText', true);
+            hideAlert('loginAlert');
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Check if user exists in localStorage
+                const existingUser = localStorage.getItem('medibotUser');
+                if (!existingUser) {
+                    throw new Error('No account found with this email. Please register first.');
+                }
+
+                const userData = JSON.parse(existingUser);
+                if (userData.email !== email) {
+                    throw new Error('No account found with this email. Please register first.');
+                }
+
+                // In a real app, you'd verify the password hash
+                // For demo purposes, we'll accept any password for existing users
+
+                // Update user data
+                userData.loginTime = new Date().toISOString();
+                userData.rememberMe = rememberMe;
+
+                localStorage.setItem('medibotUser', JSON.stringify(userData));
+
+                showAlert('loginAlert', 'Login successful! Redirecting...', 'success');
+
+                // Redirect after success
+                setTimeout(() => {
+                    window.location.href = 'portal.html';
+                }, 1000);
+
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('loginAlert', error.message || 'Login failed', 'error');
+            } finally {
+                setLoading('loginBtn', 'loginSpinner', 'loginBtnText', false);
+            }
+        });
+
+        // Registration form handler
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            console.log('Registration form submitted');
+
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const phone = document.getElementById('phone').value.trim();
+            const ageVal = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const termsAgree = document.getElementById('termsAgree').checked;
+
+            const age = ageVal ? parseInt(ageVal, 10) : null;
+
+            // Validation: phone is optional
+            if (!firstName || !lastName || !email || !password || !gender) {
+                showAlert('registerAlert', 'Please fill in required fields', 'error');
+                return;
+            }
+
+            if (!termsAgree) {
+                showAlert('registerAlert', 'Please agree to the Terms of Service and Privacy Policy', 'error');
+                return;
+            }
+
+            if (!isValidEmail(email)) {
+                showAlert('registerAlert', 'Please enter a valid email address', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('registerAlert', 'Password must be at least 6 characters long', 'error');
+                return;
+            }
+
+            if (age !== null && (age < 1 || age > 120)) {
+                showAlert('registerAlert', 'Please enter a valid age', 'error');
+                return;
+            }
+
+            // Check if user already exists
+            const existingUser = localStorage.getItem('medibotUser');
+            if (existingUser) {
+                try {
+                    const userData = JSON.parse(existingUser);
+                    if (userData.email === email) {
+                        showAlert('registerAlert', 'An account with this email already exists. Please login instead.', 'error');
+                        return;
+                    }
+                } catch (err) {
+                    console.warn('Could not parse existing user:', err);
+                }
+            }
+
+            // Show loading
+            setLoading('registerBtn', 'registerSpinner', 'registerBtnText', true);
+            hideAlert('registerAlert');
+
+            try {
+                // Simulate API call delay (for UX)
+                await new Promise(resolve => setTimeout(resolve, 800));
+
+                // Send data to Flask backend
+                const response = await fetch("http://127.0.0.1:5000/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        firstName,
+                        lastName,
+                        email,
+                        password,
+                        phone,
+                        age,
+                        gender
+                    })
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    // Store basic user info locally for demo flows and include server patient id if available
+                    const userData = {
+                        id: data.id || null,
+                        firstName,
+                        lastName,
+                        email,
+                        phone,
+                        age,
+                        gender,
+                        registrationTime: new Date().toISOString(),
+                        userType: 'patient',
+                        profileComplete: true
+                    };
+                    localStorage.setItem('medibotUser', JSON.stringify(userData));
+
+                    showAlert("registerAlert", data.message || "Registration successful!", "success");
+                    setTimeout(() => window.location.href = "/portal.html", 1200);
+                } else {
+                    showAlert("registerAlert", data.error || data.message || "Registration failed", "error");
+                }
+            } catch (error) {
+                console.error("Registration error:", error);
+                showAlert("registerAlert", "Server connection failed. Try again.", "error");
+            } finally {
+                setLoading('registerBtn', 'registerSpinner', 'registerBtnText', false);
+            }
+        });
+
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('✅ DOM Content Loaded');
+
+            const existingUser = localStorage.getItem('medibotUser');
+            if (existingUser) {
+                try {
+                    const userData = JSON.parse(existingUser);
+                    console.log('Existing user found:', userData.email);
+
+                    // If user is already logged in, redirect to portal
+                    if (userData.firstName) {
+                        console.log('User already authenticated, redirecting to portal...');
+                        showAlert('loginAlert', 'You are already logged in. Redirecting to portal...', 'info');
+                        setTimeout(() => {
+                            window.location.href = "/portal.html";
+                        }, 1200);
+                        return;
+                    }
+
+                    // Pre-fill login form if remember me was checked
+                    if (userData.rememberMe) {
+                        document.getElementById('loginEmail').value = userData.email;
+                        document.getElementById('rememberMe').checked = true;
+                    }
+                } catch (err) {
+                    console.warn('Failed to parse local user data', err);
+                }
+            }
+
+            // Add smooth animations
+            const elements = document.querySelectorAll('.login-left, .login-right');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'all 0.8s ease';
+
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 200);
+            });
+        });
+
+        // Handle Enter key in forms
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                const activeForm = document.querySelector('.auth-form.active');
+                if (!activeForm) return;
+                if (activeForm.id === 'loginForm') {
+                    document.getElementById('loginForm').dispatchEvent(new Event('submit', { cancelable: true }));
+                } else if (activeForm.id === 'registerForm') {
+                    document.getElementById('registerForm').dispatchEvent(new Event('submit', { cancelable: true }));
+                }
+            }
+        });
+
+        console.log('✅ Medibot Login Page Ready!');
+    </script>
+</body>
+
+</html>

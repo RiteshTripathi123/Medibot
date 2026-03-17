@@ -1,0 +1,23 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appointment Confirmed</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="simple-page">
+  <main class="simple-shell">
+    <section class="simple-card simple-confirmation">
+      <p class="simple-kicker">Booking Complete</p>
+      <h1>Appointment Confirmed</h1>
+      <p class="simple-description">Thank you, {{ name }}. Your appointment has been booked successfully.</p>
+      <div class="simple-actions">
+        <a href="{{ url_for('appointments') }}" class="simple-btn secondary">Book another</a>
+        <a href="{{ url_for('portal_page') }}" class="simple-btn primary">Go to Portal</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+

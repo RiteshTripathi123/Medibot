@@ -2,7 +2,8 @@
 
     // ── Constants ──────────────────────────────────────────────────────────────
     const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
-    const apiKey = "AIzaSyDQo8Kg7M2nh_9aS43JpHP0B1W2Q4a0jG0"; // !!! Insert your Gemini API key here !!!
+    const apiKey = process.env.GEMINI_API_KEY;
+    console.log(apiKey); // !!! Insert your Gemini API key here !!!
     const MAX_RETRIES = 10;
     const BASE_DELAY_MS = 5000;
 

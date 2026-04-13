@@ -1,4 +1,4 @@
-// static/js/config.js
 window.ENV = {
-  API_URL: "" // Empty = same server (Flask serves both frontend & backend)
+  API_URL: "",
+  GOOGLE_MAPS_API_KEY: "{{ google_maps_key }}"  // if Flask passes it
 };

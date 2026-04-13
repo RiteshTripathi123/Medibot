@@ -2,7 +2,7 @@
 
     // ── Constants ──────────────────────────────────────────────────────────────
     const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
-    const apiKey = process.env.GEMINI_API_KEY;
+    const API_URL = window.ENV?.API_URL || "https://medibot-backend.onrender.com";
     console.log(apiKey); // !!! Insert your Gemini API key here !!!
     const MAX_RETRIES = 10;
     const BASE_DELAY_MS = 5000;

@@ -1425,6 +1425,12 @@
     
 
         <!-- ADD this line FIRST, before all other scripts -->
+    <script>
+      window.ENV = {
+        API_URL: "",
+        GEMINI_API_KEY: "{{ gemini_key }}"
+      };
+    </script>
     <script src="{{ url_for('static', filename='js/config.js') }}"></script>
     
     <script src="{{ url_for('static', filename='js/portal.js') }}"></script>

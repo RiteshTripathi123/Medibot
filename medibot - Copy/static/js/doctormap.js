@@ -3,10 +3,9 @@
     // ── Constants ──────────────────────────────────────────────────────────────
     const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
     const API_URL = window.ENV?.API_URL || "";
-    console.log(apiKey); // !!! Insert your API key here !!!
+    const apiKey = window.ENV?.GEMINI_API_KEY || "";
     const MAX_RETRIES = 10;
-    const BASE_DELAY_MS = 5000; // Start at 5 s (safer for free-tier limits)
-
+    const BASE_DELAY_MS = 5000;
     // Simple in-session cache: "specialty|location" → parsed doctors array
     const searchCache = new Map();
 

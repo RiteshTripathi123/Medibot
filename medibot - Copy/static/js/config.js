@@ -1,4 +1,4 @@
-// config.js — safe to commit, no secrets here
+// static/js/config.js
 window.ENV = {
-  API_URL: "https://medibot-backend.onrender.com"
+  API_URL: "" // Empty = same server (Flask serves both frontend & backend)
 };

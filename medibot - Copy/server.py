@@ -678,7 +678,7 @@ def home():
 @app.route('/portal')
 @app.route('/portal.html')
 def portal_page():
-    return render_template('portal.html')
+    return render_template('portal.html',gemini_key=GEMINI_API_KEY)
 
 
 @app.route('/login')

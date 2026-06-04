@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medibot Appointments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="simple-page">
+    <main class="simple-shell">
+        <section class="simple-card">
+            <p class="simple-kicker">Medibot Appointments</p>
+            <h1>Book and manage your consultations</h1>
+            <p class="simple-description">
+                Sign in to schedule appointments, track upcoming visits, and receive AI-assisted healthcare guidance.
+            </p>
+
+            <div class="simple-actions">
+                <a href="{{ url_for('login_page') }}" class="simple-btn primary">Login</a>
+                <a href="{{ url_for('portal_page') }}" class="simple-btn secondary">Open Portal</a>
+            </div>
+
+            <div class="simple-grid">
+                <article class="simple-item">
+                    <h3>Fast booking</h3>
+                    <p>Choose specialty, date, and preferred slot in seconds.</p>
+                </article>
+                <article class="simple-item">
+                    <h3>Secure account</h3>
+                    <p>Appointments stay connected to your private patient profile.</p>
+                </article>
+                <article class="simple-item">
+                    <h3>Live dashboard</h3>
+                    <p>Follow reminders and health trends from one place.</p>
+                </article>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
+

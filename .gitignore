@@ -1,0 +1,25 @@
+# Environment variables - NEVER commit
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Node
+node_modules/
+package-lock.json
+
+# Database
+*.db
+instance/
+
+# VS Code
+.vscode/
+
+# Playwright
+.playwright-mcp/

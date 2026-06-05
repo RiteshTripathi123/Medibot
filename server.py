@@ -62,13 +62,19 @@ def derive_specialty_from_doctor_name(doctor_name):
 
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-"""
-Kaggle-related code has been commented out as per user request.
-# KAGGLE_DOCTORS_DATASET = os.getenv("KAGGLE_DOCTORS_DATASET", "shivd24coder/us-healthcare-providers-by-cities")
-# _default_doctors_data = os.path.join('instance', 'doctors_india.csv') if os.path.exists(os.path.join(app.root_path, 'instance', 'doctors_india.csv')) else os.path.join('instance', 'doctors_kaggle.json')
-# _doctors_data_env = os.getenv("DOCTORS_DATA_PATH", _default_doctors_data)
-# DOCTORS_DATA_PATH = _doctors_data_env if os.path.isabs(_doctors_data_env) else os.path.join(app.root_path, _doctors_data_env)
-"""
+
+_default_csv_path = os.path.join('instance', 'doctors_india.csv')
+_default_json_path = os.path.join('instance', 'doctors_india_cities_best.json')
+if os.path.exists(os.path.join(app.root_path, _default_csv_path)):
+    _default_doctors_data = _default_csv_path
+elif os.path.exists(os.path.join(app.root_path, _default_json_path)):
+    _default_doctors_data = _default_json_path
+else:
+    _default_doctors_data = _default_csv_path
+
+_doctors_data_env = os.getenv("DOCTORS_DATA_PATH", _default_doctors_data)
+DOCTORS_DATA_PATH = _doctors_data_env if os.path.isabs(_doctors_data_env) else os.path.join(app.root_path, _doctors_data_env)
+
 INDIA_COUNTRY_CODES = {'in', 'ind'}
 INDIA_COUNTRY_NAMES = {'india', 'bharat'}
 
@@ -578,8 +584,23 @@ def extract_gemini_text(payload):
     if not candidates:
         return ''
 
-    parts = ((candidates[0].get('content') or {}).get('parts') or [])
-    texts = [part.get('text', '') for part in parts if isinstance(part, dict)]
+    content = candidates[0].get('content', '')
+    if isinstance(content, str):
+        return content.strip()
+
+    if isinstance(content, dict):
+        parts = content.get('parts') or []
+    elif isinstance(content, list):
+        parts = content
+    else:
+        parts = []
+
+    texts = []
+    for part in parts:
+        if isinstance(part, dict):
+            text_value = part.get('text')
+            if isinstance(text_value, str):
+                texts.append(text_value)
     return '\n'.join([item for item in texts if item]).strip()
 
 
@@ -593,14 +614,22 @@ def parse_json_from_text(text):
     except Exception:
         pass
 
-    match = re.search(r'\{[\s\S]*\}', cleaned)
-    if not match:
-        return None
+    # Try to extract a JSON object or array from surrounding text.
+    object_match = re.search(r'\{[\s\S]*\}', cleaned)
+    if object_match:
+        try:
+            return json.loads(object_match.group(0))
+        except Exception:
+            pass
 
-    try:
-        return json.loads(match.group(0))
-    except Exception:
-        return None
+    array_match = re.search(r'\[[\s\S]*\]', cleaned)
+    if array_match:
+        try:
+            return json.loads(array_match.group(0))
+        except Exception:
+            pass
+
+    return None
 
 
 def fallback_symptom_analysis(symptoms, duration='', severity='', existing_diseases='', current_medications=''):
@@ -1277,25 +1306,21 @@ def symptom_checker():
 
     system_prompt = (
         'You are a clinical triage assistant for a healthcare app. '
-        'Return a single JSON object only, no markdown, no extra text. '
-        'Do not provide definitive diagnosis. '
-        'Output keys exactly: summary, specialistType, urgency, possibleConditions, recommendations, redFlags, confidence. '
+        'When given symptoms and patient context, reply with ONLY a valid JSON object. '
+        'Do NOT include markdown, code fences, explanations, or any extra text outside the JSON object. '
+        'Output exactly these fields: summary, specialistType, urgency, possibleConditions, recommendations, redFlags, confidence. '
+        'Use arrays for possibleConditions, recommendations, and redFlags. '
         'urgency must be one of: low, medium, high, emergency. '
-        'possibleConditions must have 2-4 concise items. '
-        'recommendations must have 4-6 actionable items. '
-        'redFlags must have 3-5 warning signs for urgent escalation. '
         'confidence must be one of: low, medium, high. '
-        'Keep response practical and specific.'
+        'Keep the response specific to the patient data and avoid generic medical platitudes.'
     )
 
     payload = {
         'contents': [{'parts': [{'text': symptom_prompt}]}],
-        'tools': [{'google_search': {}}],
         'systemInstruction': {'parts': [{'text': system_prompt}]},
         'generationConfig': {
             'temperature': 0.2,
-            'maxOutputTokens': 500,
-            'responseMimeType': 'application/json'
+            'maxOutputTokens': 500
         }
     }
 
@@ -1371,5 +1396,89 @@ def symptom_checker():
         fallback['summary'] = 'Unexpected analysis error. Showing fallback triage.'
         return jsonify(fallback), 200
 
+
+@app.route('/api/doctor-search', methods=['POST'])
+def doctor_search():
+    data = request.get_json(silent=True) or {}
+    specialty = (data.get('specialty') or 'General Physician').strip() or 'General Physician'
+    location = (data.get('location') or '').strip() or 'near me'
+
+    if not GEMINI_API_KEY:
+        return jsonify({'error': 'Gemini API key is not configured on the server.'}), 500
+
+    prompt = (
+        'You are a medical search assistant. Return ONLY a valid JSON array — no markdown, no explanation. '
+        'Each element must have exactly these keys: "Name", "Rating", "Address", "Phone". '
+        'Provide 4 doctor entries when possible.'
+    )
+    user_query = f'List 4 top-rated {specialty} doctors near {location}. JSON only.'
+
+    payload = {
+        'contents': [{'parts': [{'text': user_query}]}],
+        'systemInstruction': {'parts': [{'text': prompt}]},
+        'generationConfig': {'temperature': 0.2, 'maxOutputTokens': 1024}
+    }
+
+    endpoint = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+    req = urllib_request.Request(
+        endpoint,
+        data=json.dumps(payload).encode('utf-8'),
+        headers={'Content-Type': 'application/json'},
+        method='POST'
+    )
+
+    try:
+        with urllib_request.urlopen(req, timeout=30) as response:
+            body = response.read().decode('utf-8')
+            parsed = json.loads(body)
+            raw_text = extract_gemini_text(parsed)
+            doctors = parse_json_from_text(raw_text)
+            if doctors is None:
+                # Fallback: maybe the raw body itself is already a JSON array/object.
+                try:
+                    fallback = json.loads(body)
+                except Exception:
+                    fallback = None
+                if isinstance(fallback, list):
+                    doctors = fallback
+                elif isinstance(fallback, dict):
+                    doctors = fallback.get('doctors') or fallback.get('results') or fallback.get('items')
+                else:
+                    doctors = None
+
+            if isinstance(doctors, dict):
+                doctors = doctors.get('doctors') or doctors.get('results') or doctors.get('items')
+
+            if not isinstance(doctors, list):
+                return jsonify({
+                    'error': 'Unexpected response format from Gemini.',
+                    'details': {
+                        'raw_text': raw_text[:800] if isinstance(raw_text, str) else None,
+                        'body_snippet': body[:800]
+                    }
+                }), 502
+
+            doctors = [doc for doc in doctors if isinstance(doc, dict)]
+            return jsonify({'doctors': doctors}), 200
+    except HTTPError as http_err:
+        error_body = ''
+        upstream_message = ''
+        try:
+            error_body = http_err.read().decode('utf-8')
+            parsed = json.loads(error_body)
+            upstream_message = parsed.get('error', {}).get('message', '')
+        except Exception:
+            pass
+        return jsonify({
+            'error': upstream_message or f'Gemini request failed with status {http_err.code}.',
+            'details': error_body
+        }), http_err.code
+    except URLError as url_err:
+        return jsonify({'error': f'Network error while contacting Gemini: {url_err.reason}'}), 502
+    except Exception as err:
+        return jsonify({'error': f'Unexpected server error: {str(err)}'}), 500
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'false').strip().lower() in ('1', 'true', 'yes')
+    app.run(host='0.0.0.0', port=port, debug=debug)

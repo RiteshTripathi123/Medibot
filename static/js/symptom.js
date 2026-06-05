@@ -1,8 +1,7 @@
 (() => {
 
     // ── Constants ──────────────────────────────────────────────────────────────
-    const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
-    const apiKey ="AIzaSyD7JdJb7tQw4t49OvRc3rBnQ7iO5vIkoAA"; // !!! Insert your Gemini API key here !!!
+
     const MAX_RETRIES = 10;
     const BASE_DELAY_MS = 5000;
 
@@ -156,11 +155,6 @@
             return;
         }
 
-        if (!apiKey || apiKey.trim() === '') {
-            showMessage('API Key Missing', 'Please add your Gemini API key in symptom-checker.js.', true);
-            return;
-        }
-
         // Reset UI
         analyzeButton.disabled = true;
         analyzeButton.textContent = 'Analyzing...';
@@ -170,68 +164,42 @@
         if (loadingIndicator) loadingIndicator.classList.remove('hidden');
 
         try {
-            // Pull extra context fields if present
-            const duration    = symptomDuration?.value?.trim()    || 'unknown';
-            const severity    = symptomSeverity?.value?.trim()    || 'unknown';
-            const diseases    = existingDiseases?.value?.trim()   || 'none';
-            const medications = currentMedications?.value?.trim() || 'none';
+            const duration    = symptomDuration?.value?.trim()    || '';
+            const severity    = symptomSeverity?.value?.trim()    || '';
+            const diseases    = existingDiseases?.value?.trim()   || '';
+            const medications = currentMedications?.value?.trim() || '';
 
-            const systemPrompt = `You are a professional AI medical assistant for informational purposes only.
-Analyze the patient's symptoms and return ONLY a valid JSON object — no markdown, no explanation, no extra text.
-The JSON must have exactly these keys:
-- "summary": string (2-3 sentence overview)
-- "specialistType": string (e.g. "Cardiologist", "General Physician")
-- "urgency": one of "low" | "medium" | "high" | "emergency"
-- "confidence": one of "low" | "medium" | "high"
-- "possibleConditions": array of strings (3-5 items)
-- "recommendations": array of strings (3-5 actionable steps)
-- "redFlags": array of strings (warning signs requiring immediate care)
-
-Always end with a disclaimer that this is not a substitute for professional medical advice.`;
-
-            const userQuery = `Patient symptoms: ${symptoms}
-Duration: ${duration}
-Severity: ${severity}
-Existing conditions: ${diseases}
-Current medications: ${medications}
-
-Return JSON only.`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
-            };
-
-            const response = await fetchWithBackoff(`${API_BASE_URL}?key=${apiKey}`, {
+            const response = await fetchWithBackoff('/api/symptom-checker', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    symptoms,
+                    duration,
+                    severity,
+                    existingDiseases: diseases,
+                    currentMedications: medications
+                })
             });
 
-            const result  = await response.json();
-            const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-            const data    = extractJsonObject(rawText);
-
-            if (!data) {
-                throw new Error('Could not parse AI response. Please try again.');
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to analyze symptoms.');
             }
 
             renderAnalysis(data);
             lastSpecialistType = data.specialistType || 'General Physician';
             if (specialistTypeDisplay) specialistTypeDisplay.textContent = lastSpecialistType;
 
-            // Grounding sources (if any)
-            const grounding = result.candidates?.[0]?.groundingMetadata?.groundingAttributions || [];
             if (sourcesContainer && sourcesList) {
+                const grounding = data.sources || [];
                 sourcesList.innerHTML = '';
                 if (grounding.length > 0) {
                     sourcesContainer.classList.remove('hidden');
                     grounding.forEach(src => {
-                        if (src.web?.uri && src.web?.title) {
+                        if (src.url && src.title) {
                             const li = document.createElement('li');
-                            li.innerHTML = `<a href="${escapeHtml(src.web.uri)}" target="_blank" rel="noopener"
-                                class="text-blue-600 hover:underline">${escapeHtml(src.web.title)}</a>`;
+                            li.innerHTML = `<a href="${escapeHtml(src.url)}" target="_blank" rel="noopener"
+                                class="text-blue-600 hover:underline">${escapeHtml(src.title)}</a>`;
                             sourcesList.appendChild(li);
                         }
                     });
@@ -263,41 +231,19 @@ Return JSON only.`;
                 ? `near latitude ${lat.toFixed(4)}, longitude ${lon.toFixed(4)}`
                 : 'near me';
 
-            const systemPrompt = `You are a medical search assistant. Return ONLY a valid JSON array — no markdown, no explanation.
-Each element must have: "Name", "Rating", "Address", "Phone".
-Example: [{"Name":"Dr. Jane Smith","Rating":"4.8/5","Address":"123 Main St","Phone":"(555) 123-4567"}]`;
-
-            const userQuery = `List 4 top-rated ${lastSpecialistType} doctors ${location}. JSON only.`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: { parts: [{ text: systemPrompt }] },
-                generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
-            };
-
-            const response = await fetchWithBackoff(`${API_BASE_URL}?key=${apiKey}`, {
+            const response = await fetchWithBackoff('/api/doctor-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ specialty: lastSpecialistType, location })
             });
 
-            const result  = await response.json();
-            const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            // Try structured JSON first
-            let doctors = null;
-            if (rawText) {
-                const cleaned = rawText.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
-                try { doctors = JSON.parse(cleaned); } catch (_) {}
-                if (!doctors) {
-                    const s = cleaned.indexOf('['), e = cleaned.lastIndexOf(']');
-                    if (s !== -1 && e > s) {
-                        try { doctors = JSON.parse(cleaned.slice(s, e + 1)); } catch (_) {}
-                    }
-                }
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Doctor search failed.');
             }
 
-            if (Array.isArray(doctors) && doctors.length > 0) {
+            const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+            if (doctors.length > 0) {
                 doctorSearchResults.innerHTML = `
                     <ul class="space-y-3">
                         ${doctors.map(doc => `

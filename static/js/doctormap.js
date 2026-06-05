@@ -1,8 +1,6 @@
 (function () {
 
     // ── Constants ──────────────────────────────────────────────────────────────
-    const API_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent";
-    const apiKey ="AIzaSyD7JdJb7tQw4t49OvRc3rBnQ7iO5vIkoAA" // !!! Insert your API key here !!!
     const MAX_RETRIES = 10;
     const BASE_DELAY_MS = 5000; // Start at 5 s (safer for free-tier limits)
 
@@ -118,14 +116,6 @@
 
     // ── Main Search ────────────────────────────────────────────────────────────
     async function searchDoctors(specialty, location) {
-        // Validate API key
-        if (!apiKey || apiKey.trim() === "") {
-            showError("API Configuration Error: Please insert your valid Gemini API key in doctormap.js.");
-            showLoading(false);
-            return;
-        }
-
-        // Check cache first
         const cacheKey = `${specialty.toLowerCase()}|${location.toLowerCase()}`;
         if (searchCache.has(cacheKey)) {
             renderDoctorCards(searchCache.get(cacheKey));
@@ -133,91 +123,34 @@
             return;
         }
 
-        // NOTE: google_search grounding and strict JSON output are incompatible —
-        // the model embeds citations inside the text and breaks JSON parsing.
-        // We use a plain request with a very explicit JSON-only prompt instead.
-        const systemPrompt = `You are a medical search assistant. Return ONLY a valid JSON array — no markdown, no explanation, no extra text before or after.
-Each element must have exactly these keys: "Name", "Rating", "Address", "Phone".
-Example format:
-[{"Name":"Dr. Jane Smith","Rating":"4.8/5","Address":"123 Main St, City","Phone":"(555) 123-4567"}]`;
-
-        const userQuery = `List 4 top-rated ${specialty} doctors near ${location}. JSON only.`;
-
-        const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: {
-                temperature: 0.2,       // Lower = more predictable / less hallucination
-                maxOutputTokens: 1024,
-            }
-        };
-
-        let delay = BASE_DELAY_MS;
-
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
-                const response = await fetch(`${API_BASE_URL}?key=${apiKey}`, {
+                const response = await fetch('/api/doctor-search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ specialty, location })
                 });
 
-                // Handle rate-limit specifically
-                if (response.status === 429) {
-                    const retryAfter = response.headers.get('Retry-After');
-                    const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : delay;
-                    console.warn(`Rate limited. Waiting ${waitMs / 1000}s before retry…`);
-                    if (attempt < MAX_RETRIES - 1) {
-                        await sleep(waitMs);
-                        delay *= 2;
-                        continue;
-                    } else {
-                        throw new Error("Rate limit exceeded. Please wait a moment and try again.");
-                    }
-                }
-
+                const data = await response.json();
                 if (!response.ok) {
-                    const body = await response.text().catch(() => '');
-                    throw new Error(`HTTP ${response.status}: ${body.slice(0, 120)}`);
+                    throw new Error(data.error || `HTTP ${response.status}`);
                 }
 
-                const result = await response.json();
-                const rawText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                const doctors = extractJsonArray(rawText);
-
-                if (!doctors || doctors.length === 0) {
-                    throw new Error("Model returned an empty or unparseable response. Please try again.");
+                const doctors = Array.isArray(data.doctors) ? data.doctors : [];
+                if (doctors.length === 0) {
+                    throw new Error('No doctor recommendations could be generated for your criteria. Please try a different specialty or location.');
                 }
 
-                // Cache & render
                 searchCache.set(cacheKey, doctors);
                 renderDoctorCards(doctors);
-
-                // Sources (only present when grounding is active — kept for future use)
-                const grounding = result.candidates?.[0]?.groundingMetadata?.groundingAttributions || [];
-                if (grounding.length > 0 && sourcesList && sourcesContainer) {
-                    sourcesContainer.classList.remove('hidden');
-                    sourcesList.innerHTML = '';
-                    grounding.forEach(src => {
-                        if (src.web?.uri && src.web?.title) {
-                            const li = document.createElement('li');
-                            li.innerHTML = `<a href="${escapeHtml(src.web.uri)}" target="_blank" rel="noopener noreferrer"
-                                class="text-blue-400 hover:underline">${escapeHtml(src.web.title)}</a>`;
-                            sourcesList.appendChild(li);
-                        }
-                    });
-                } else if (sourcesContainer) {
-                    sourcesContainer.classList.add('hidden');
-                }
-
+                if (sourcesContainer) sourcesContainer.classList.add('hidden');
                 showLoading(false);
-                return; // ✅ Success — exit loop
-
+                return;
             } catch (error) {
                 console.error(`Attempt ${attempt + 1} failed:`, error);
                 if (attempt < MAX_RETRIES - 1) {
-                    await sleep(delay);
-                    delay *= 2; // Exponential back-off
+                    const retryAfter = error.retryAfter || 0;
+                    await sleep(Math.max(retryAfter, BASE_DELAY_MS * Math.pow(2, attempt)));
                 } else {
                     showError(`Search failed after ${MAX_RETRIES} attempts: ${error.message}`);
                     showLoading(false);
